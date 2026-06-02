@@ -171,9 +171,21 @@ async function buildAndSend(publicKey: string, method: string, args: xdr.ScVal[]
   return submitted.hash;
 }
 
+export function xlmToStroops(amountXlm: string): bigint {
+  const normalized = amountXlm.trim();
+  if (!/^[0-9]+(?:\.[0-9]+)?$/.test(normalized)) {
+    throw new Error("Invalid amount");
+  }
+
+  const [whole, fraction = ""] = normalized.split(".");
+  const fractionPadded = (fraction + "0000000").slice(0, 7);
+  return BigInt(whole) * 10_000_000n + BigInt(fractionPadded);
+}
+
 export async function createSchedule(
   publicKey: string,
   beneficiary: string,
+  totalAmountXlm: string,
   tokenAddress: string,
   totalAmountXlm: number,
   startTime: number,
@@ -182,7 +194,7 @@ export async function createSchedule(
   kind: "Linear" | "Cliff" | "LinearWithCliff",
   revocable: boolean
 ): Promise<string> {
-  const totalStroops = BigInt(Math.round(totalAmountXlm * 10_000_000));
+  const totalStroops = xlmToStroops(totalAmountXlm);
   const durationSecs = durationDays * 86400;
   const cliffSecs = cliffDays * 86400;
 
@@ -262,9 +274,19 @@ export function vestingProgress(s: ScheduleData, now: number): number {
 }
 
 export function formatDate(ts: number): string {
+  if (!ts || ts <= 0) return "—";
   return new Date(ts * 1000).toLocaleDateString(undefined, {
     year: "numeric", month: "short", day: "numeric",
   });
+}
+
+/**
+ * Format a cliff timestamp for display.
+ * Returns "No cliff" when ts is 0 or cliff_duration is 0 (no cliff configured).
+ */
+export function formatCliffDate(cliffDuration: number, startTime: number): string {
+  if (!cliffDuration || cliffDuration <= 0) return "No cliff";
+  return formatDate(startTime + cliffDuration);
 }
 
 export function parseContractError(e: Error): string {
