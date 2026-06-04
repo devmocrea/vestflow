@@ -17,6 +17,7 @@ import {
 import { useWallet } from "@/lib/WalletContext";
 import { useToast } from "@/components/Toast";
 import VestingChart from "@/components/VestingChart";
+import CopyButton from "@/components/CopyButton";
 
 export default function ScheduleCard({
   schedule,
@@ -136,15 +137,13 @@ export default function ScheduleCard({
       {/* Header */}
       <div className="flex items-start justify-between">
         <div>
-          <Link
-            href={`/app/schedule/${schedule.id}`}
-            className="text-sm font-semibold text-white hover:text-violet-300 transition-colors"
-          >
-            Schedule #{schedule.id}
-          </Link>
-          <p className="text-xs text-zinc-500 mt-0.5">
-            {schedule.kind} vesting{schedule.revocable ? " · revocable" : ""}
-          </p>
+          <div className="flex items-center gap-2">
+            <Link href={`/app/schedule/${schedule.id}`} className="text-sm font-semibold text-white hover:text-violet-300 transition-colors">
+              Schedule #{schedule.id}
+            </Link>
+            <CopyButton value={String(schedule.id)} label={`Copy schedule ${schedule.id}`} />
+          </div>
+          <p className="text-xs text-zinc-500 mt-0.5">{schedule.kind} vesting{schedule.revocable ? " · revocable" : ""}</p>
         </div>
         <span className={`text-xs font-medium px-2 py-0.5 rounded-full ${statusColor}`}>
           {statusLabel}
@@ -154,41 +153,23 @@ export default function ScheduleCard({
       {/* Details grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs text-zinc-400">
         <div>
-          <span className="text-zinc-600">Grantor</span>
-          <p className="font-mono text-zinc-300 mt-0.5">
-            <span className="sm:hidden">{truncate(schedule.grantor, 4, 3)}</span>
-            <span className="hidden sm:inline">{truncate(schedule.grantor)}</span>
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-zinc-600">Grantor</span>
+            <CopyButton value={schedule.grantor} label="Copy grantor address" />
+          </div>
+          <p className="font-mono text-zinc-300 mt-0.5"><span className="sm:hidden">{truncate(schedule.grantor, 4, 3)}</span><span className="hidden sm:inline">{truncate(schedule.grantor)}</span></p>
         </div>
         <div>
-          <span className="text-zinc-600">Beneficiary</span>
-          <p className="font-mono text-zinc-300 mt-0.5">
-            <span className="sm:hidden">{truncate(schedule.beneficiary, 4, 3)}</span>
-            <span className="hidden sm:inline">{truncate(schedule.beneficiary)}</span>
-          </p>
+          <div className="flex items-center justify-between gap-2">
+            <span className="text-zinc-600">Beneficiary</span>
+            <CopyButton value={schedule.beneficiary} label="Copy beneficiary address" />
+          </div>
+          <p className="font-mono text-zinc-300 mt-0.5"><span className="sm:hidden">{truncate(schedule.beneficiary, 4, 3)}</span><span className="hidden sm:inline">{truncate(schedule.beneficiary)}</span></p>
         </div>
-        <div>
-          <span className="text-zinc-600">Total</span>
-          <p className="text-zinc-300 mt-0.5">
-            {stroopsToXlm(schedule.total_amount)} {tokenSymbol}
-          </p>
-        </div>
-        <div>
-          <span className="text-zinc-600">Claimed</span>
-          <p className="text-zinc-300 mt-0.5">
-            {stroopsToXlm(schedule.claimed)} {tokenSymbol}
-          </p>
-        </div>
-        <div>
-          <span className="text-zinc-600">Starts</span>
-          <p className="text-zinc-300 mt-0.5">{formatDate(schedule.start_time)}</p>
-        </div>
-        <div>
-          <span className="text-zinc-600">Ends</span>
-          <p className="text-zinc-300 mt-0.5">
-            {formatDate(schedule.start_time + schedule.duration)}
-          </p>
-        </div>
+        <div><span className="text-zinc-600">Total</span><p className="text-zinc-300 mt-0.5">{stroopsToXlm(schedule.total_amount)} XLM</p></div>
+        <div><span className="text-zinc-600">Claimed</span><p className="text-zinc-300 mt-0.5">{stroopsToXlm(schedule.claimed)} XLM</p></div>
+        <div><span className="text-zinc-600">Starts</span><p className="text-zinc-300 mt-0.5">{formatDate(schedule.start_time)}</p></div>
+        <div><span className="text-zinc-600">Ends</span><p className="text-zinc-300 mt-0.5">{formatDate(schedule.start_time + schedule.duration)}</p></div>
         {!isNative && (
           <div className="col-span-2">
             <span className="text-zinc-600">Token Contract</span>
