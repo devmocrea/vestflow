@@ -13,7 +13,11 @@ const dbs = new Map<NetworkName, Database.Database>();
 function dbPathFor(network: NetworkName): string {
   const specific = process.env[`INDEXER_DB_PATH_${network.toUpperCase()}`];
   if (specific) return specific;
-  if (DB_PATH) return DB_PATH;
+  // Preserve the legacy single-network path only for the poller's configured
+  // network. Using it for both query values would mix Mainnet and Testnet rows.
+  if (DB_PATH && network === parseNetwork(process.env.INDEXER_NETWORK)) {
+    return DB_PATH;
+  }
   return path.join(process.cwd(), `vestflow-events-${network}.db`);
 }
 

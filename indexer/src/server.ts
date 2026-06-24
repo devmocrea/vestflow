@@ -13,7 +13,7 @@
 import http from "http";
 import { URL } from "url";
 import { queryEvents, getCheckpoint, getTvlStats } from "./db";
-import { parseNetwork } from "./config";
+import { parseNetwork, type NetworkName } from "./config";
 import type { EventQueryParams } from "./types";
 
 const PORT = Number(process.env.INDEXER_PORT ?? "3001");
@@ -53,7 +53,14 @@ const server = http.createServer((req, res) => {
   }
 
   const { pathname, searchParams } = parsed;
-  const network = parseNetwork(searchParams.get("network"));
+  let network: NetworkName;
+  try {
+    network = parseNetwork(searchParams.get("network"));
+  } catch {
+    return json(res, 400, {
+      error: "network must be either mainnet or testnet",
+    });
+  }
 
   if (pathname === "/health") {
     return json(res, 200, { ok: true, network, checkpoint: getCheckpoint(network) });

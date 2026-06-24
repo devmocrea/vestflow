@@ -58,6 +58,13 @@ function toStr(v: unknown): string | null {
   try { return String(v); } catch { return null; }
 }
 
+/** JSON.stringify does not support bigint values returned by scValToNative. */
+function jsonStringify(value: unknown): string {
+  return JSON.stringify(value, (_key, item) =>
+    typeof item === "bigint" ? item.toString() : item
+  );
+}
+
 /**
  * Decode the event value, which may be an array (from Vec ScVal tuple) or
  * an object with numeric keys. Returns an array for consistent access.
@@ -165,8 +172,8 @@ async function poll(): Promise<void> {
           amount,
           token,
           created_amount: createdAmount,
-          raw_topics: JSON.stringify(topics),
-          raw_value: JSON.stringify(value),
+          raw_topics: jsonStringify(topics),
+          raw_value: jsonStringify(value),
         }, NETWORK);
 
         if (isNew) ingested++;

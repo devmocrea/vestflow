@@ -56,6 +56,26 @@ Builds the release Wasm, optimizes it when Stellar CLI is available, reports byt
 ./scripts/contract-metrics.sh
 ```
 
+With a deployed contract, it profiles argument-free entry points using
+`stellar contract invoke --cost`. Stateful and authenticated methods require
+deployment-specific inputs. Put those in a trusted shell file as calls to the
+script's `profile` helper, then require complete entry-point coverage:
+
+```bash
+# /tmp/vestflow-cost-cases.sh
+profile get_schedule --schedule-id 1
+profile claimable --schedule-id 1
+profile get_schedules_by_grantor --grantor G...
+# Add the remaining stateful entry points with valid values for this deployment.
+
+CONTRACT_ID=CC... SOURCE=my-key \
+  COST_CASES_FILE=/tmp/vestflow-cost-cases.sh REQUIRE_ALL_COSTS=1 \
+  ./scripts/contract-metrics.sh
+```
+
+The script reports every missing entry point and fails in strict mode, so a
+cost report cannot accidentally claim complete coverage from a partial run.
+
 ### `upgrade-contract.sh`
 
 Builds and optimizes the contract, uploads the Wasm, announces the hash through the contract's `announce_upgrade` entry point, and executes the upgrade after the 48-hour timelock.

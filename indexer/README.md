@@ -73,6 +73,9 @@ npm run dev:server   # query HTTP server
 
 The Next.js app proxies `/api/events` and `/api/stats/tvl` to the indexer.
 Pass `?network=testnet|mainnet` to select the indexed network.
+Any other value is rejected with HTTP 400 rather than silently reading the
+wrong network. Run one poller process per network (with its own
+`INDEXER_NETWORK`); the query server reads both per-network databases.
 
 ### Production
 

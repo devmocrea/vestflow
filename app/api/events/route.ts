@@ -45,6 +45,12 @@ const ALLOWED_PARAMS = new Set([
 export async function GET(req: NextRequest): Promise<NextResponse> {
   try {
     const network = req.nextUrl.searchParams.get("network");
+    if (network != null && network !== "mainnet" && network !== "testnet") {
+      return NextResponse.json(
+        { error: "network must be either mainnet or testnet" },
+        { status: 400 }
+      );
+    }
     const upstream = new URL(`${indexerUrlFor(network)}/events`);
 
     // Forward only known, safe params — avoids passing arbitrary values

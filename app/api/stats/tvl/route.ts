@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 const INDEXER_URL = process.env.INDEXER_URL ?? "http://localhost:3001";
 
-function networkParam(req: NextRequest): "mainnet" | "testnet" {
-  return req.nextUrl.searchParams.get("network") === "mainnet"
-    ? "mainnet"
-    : "testnet";
+function networkParam(req: NextRequest): "mainnet" | "testnet" | null {
+  const value = req.nextUrl.searchParams.get("network");
+  if (value == null || value === "") return "testnet";
+  return value === "mainnet" || value === "testnet" ? value : null;
 }
 
 function indexerUrlFor(network: "mainnet" | "testnet"): string {
@@ -17,6 +17,12 @@ function indexerUrlFor(network: "mainnet" | "testnet"): string {
 
 export async function GET(req: NextRequest): Promise<NextResponse> {
   const network = networkParam(req);
+  if (network == null) {
+    return NextResponse.json(
+      { error: "network must be either mainnet or testnet" },
+      { status: 400 }
+    );
+  }
 
   try {
     const upstream = new URL(`${indexerUrlFor(network)}/stats/tvl`);
@@ -39,4 +45,3 @@ export async function GET(req: NextRequest): Promise<NextResponse> {
     );
   }
 }
-

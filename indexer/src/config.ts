@@ -17,7 +17,9 @@ const DEFAULT_RPC_URLS: Record<NetworkName, string> = {
 };
 
 export function parseNetwork(value: string | null | undefined): NetworkName {
-  return value === "mainnet" ? "mainnet" : "testnet";
+  if (value == null || value === "") return "testnet";
+  if (value === "mainnet" || value === "testnet") return value;
+  throw new Error(`Unsupported network: ${value}`);
 }
 
 export function getNetworkConfig(network = parseNetwork(process.env.INDEXER_NETWORK)): NetworkConfig {
@@ -34,4 +36,3 @@ export function getNetworkConfig(network = parseNetwork(process.env.INDEXER_NETW
       DEFAULT_CONTRACT_IDS[network],
   };
 }
-

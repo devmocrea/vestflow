@@ -11,6 +11,8 @@ NETWORK="${NETWORK:-testnet}"
 RPC_URL="${RPC_URL:-https://soroban-testnet.stellar.org}"
 SOURCE="${SOURCE:-admin}"
 CONTRACT_ID="${CONTRACT_ID:-}"
+COST_CASES_FILE="${COST_CASES_FILE:-}"
+REQUIRE_ALL_COSTS="${REQUIRE_ALL_COSTS:-0}"
 
 echo "Building VestFlow contract for ${CONTRACT_TARGET}..."
 cargo build \
@@ -51,15 +53,62 @@ METRICS
 if [[ -n "${CONTRACT_ID}" && -x "$(command -v stellar)" ]]; then
   echo ""
   echo "Entry-point cost profile (${NETWORK})"
-  for method in version schedule_count; do
+  PROFILED_METHODS=""
+  profile() {
+    local method="$1"
+    shift
+    PROFILED_METHODS="${PROFILED_METHODS} ${method} "
+    echo ""
+    echo "--- ${method} ---"
     stellar contract invoke --cost \
       --id "${CONTRACT_ID}" \
       --source "${SOURCE}" \
       --network "${NETWORK}" \
       --rpc-url "${RPC_URL}" \
       -- \
-      "${method}" || true
+      "${method}" "$@" || echo "profile_failed=${method}" >&2
+  }
+
+  # Argument-free entry points are always safe to include. Stateful and
+  # authenticated calls need deployment-specific addresses, IDs, hashes, and
+  # vectors; callers provide those as `profile method --arg value` statements.
+  for method in version upgrade_authority pending_upgrade performance_oracle nft_contract schedule_count; do
+    profile "${method}"
   done
+
+  if [[ -n "${COST_CASES_FILE}" ]]; then
+    if [[ ! -f "${COST_CASES_FILE}" ]]; then
+      echo "Cost cases file not found: ${COST_CASES_FILE}" >&2
+      exit 1
+    fi
+    # shellcheck source=/dev/null
+    source "${COST_CASES_FILE}"
+  fi
+
+  ENTRYPOINTS=(
+    version initialize_upgrade_authority upgrade_authority pending_upgrade
+    announce_upgrade cancel_upgrade execute_upgrade create_schedule
+    create_graded_schedule pause_schedule resume_schedule
+    initialize_performance_oracle performance_oracle
+    enable_performance_milestones attest_milestone get_milestones
+    initialize_nft_contract nft_contract claim revoke transfer_beneficiary
+    get_schedule schedule_count get_schedules_by_grantor
+    get_schedules_by_beneficiary claimable claimable_bulk
+  )
+  MISSING_METHODS=()
+  for method in "${ENTRYPOINTS[@]}"; do
+    if [[ "${PROFILED_METHODS}" != *" ${method} "* ]]; then
+      MISSING_METHODS+=("${method}")
+    fi
+  done
+  if (( ${#MISSING_METHODS[@]} > 0 )); then
+    echo ""
+    echo "Unprofiled entry points: ${MISSING_METHODS[*]}"
+    echo "Set COST_CASES_FILE to a trusted shell file containing deployment-specific profile calls."
+    if [[ "${REQUIRE_ALL_COSTS}" == "1" ]]; then
+      exit 1
+    fi
+  fi
 fi
 
 if (( WASM_BYTES > MAX_WASM_BYTES )); then
