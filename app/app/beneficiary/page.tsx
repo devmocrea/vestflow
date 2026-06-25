@@ -2,7 +2,12 @@
 import { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import ScheduleCard from "@/components/ScheduleCard";
-import ScheduleCardSkeleton from "@/components/ScheduleCardSkeleton";
+import { ScheduleListSkeleton } from "@/components/ScheduleCardSkeleton";
+import {
+  NoBeneficiarySchedulesEmptyState,
+  NoSearchResultsEmptyState,
+  NoSchedulesEmptyState,
+} from "@/components/EmptyState";
 import {
   getAllSchedules,
   getClaimableBulk,
@@ -210,22 +215,18 @@ export default function BeneficiaryDashboardPage() {
 
         {/* Schedule grid */}
         {loading && schedules.length === 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {[1, 2, 3].map(i => (
-              <ScheduleCardSkeleton key={i} />
-            ))}
-          </div>
+          <ScheduleListSkeleton count={6} />
         ) : searchFiltered.length === 0 ? (
-          <div className="card p-16 text-center">
-            <p className="text-4xl mb-4">🎁</p>
-            <p className="text-zinc-400">
-              {q
-                ? "No schedules match that grantor address."
-                : publicKey
-                ? "No vesting schedules found where you are the beneficiary."
-                : "Connect your wallet to see schedules where you are receiving tokens."}
-            </p>
-          </div>
+          q ? (
+            <NoSearchResultsEmptyState 
+              searchQuery={q} 
+              onClearSearch={() => setQuery("")} 
+            />
+          ) : publicKey ? (
+            <NoBeneficiarySchedulesEmptyState />
+          ) : (
+            <NoSchedulesEmptyState isConnected={false} />
+          )
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">

@@ -2,7 +2,13 @@
 import { useEffect, useMemo, useState } from "react";
 import Navbar from "@/components/Navbar";
 import ScheduleCard from "@/components/ScheduleCard";
-import ScheduleCardSkeleton from "@/components/ScheduleCardSkeleton";
+import { ScheduleListSkeleton } from "@/components/ScheduleCardSkeleton";
+import {
+  NoSchedulesEmptyState,
+  NoSearchResultsEmptyState,
+  NoGrantorSchedulesEmptyState,
+  NoBeneficiarySchedulesEmptyState,
+} from "@/components/EmptyState";
 import {
   getAllSchedules,
   getClaimableBulk,
@@ -339,32 +345,24 @@ export default function DashboardPage() {
 
         {/* Schedule grid */}
         {loading && schedules.length === 0 ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-            {[1, 2, 3].map(i => (
-              <ScheduleCardSkeleton key={i} />
-            ))}
-          </div>
+          <ScheduleListSkeleton count={6} />
         ) : searchFiltered.length === 0 ? (
-          <div className="card p-16 text-center">
-            <p className="text-4xl mb-4">🔒</p>
-            <p className="text-zinc-400">
-              {q
-                ? "No schedules match that address."
-                : publicKey
-                ? roleFilter !== "all"
-                  ? `No schedules where you are the ${roleFilter}.`
-                  : "No vesting schedules found for your wallet."
-                : "Connect your wallet to see your schedules."}
-            </p>
-            {!q && (
-              <Link
-                href="/app/create"
-                className="inline-block mt-5 btn-primary rounded-lg px-5 py-2.5 text-sm font-semibold text-white"
-              >
-                Create Your First Schedule
-              </Link>
-            )}
-          </div>
+          q ? (
+            <NoSearchResultsEmptyState 
+              searchQuery={q} 
+              onClearSearch={() => setQuery("")} 
+            />
+          ) : publicKey ? (
+            roleFilter === "grantor" ? (
+              <NoGrantorSchedulesEmptyState />
+            ) : roleFilter === "beneficiary" ? (
+              <NoBeneficiarySchedulesEmptyState />
+            ) : (
+              <NoSchedulesEmptyState isConnected={true} />
+            )
+          ) : (
+            <NoSchedulesEmptyState isConnected={false} />
+          )
         ) : (
           <>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
